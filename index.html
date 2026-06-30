@@ -36,8 +36,8 @@ h3{font-family:'Fredoka',sans-serif;font-weight:600;margin:0 0 8px;}
 
 /* two-column laptop stage */
 .stage{display:flex;gap:18px;align-items:flex-start;}
-.map-col{flex:1 1 58%;min-width:0;}
-.side-col{flex:1 1 42%;min-width:320px;position:sticky;top:12px;}
+.map-col{flex:0 0 auto;min-width:0;}
+.side-col{flex:1 1 auto;min-width:320px;position:sticky;top:12px;}
 .intro{text-align:center;font-weight:700;color:var(--ink-soft);margin:0 0 8px;font-size:14px;}
 .side{background:var(--cream);border:2px solid var(--line);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;min-height:420px;}
 .side-hero{background:linear-gradient(160deg,#0f3145,#081f2c);text-align:center;padding:14px;}
@@ -100,6 +100,7 @@ h3{font-family:'Fredoka',sans-serif;font-weight:600;margin:0 0 8px;}
 .rail-line,.rail-tie{transition:stroke .15s,stroke-width .15s;}.rail-line.hot{stroke:var(--rail-hot);stroke-width:8;}.rail-tie.hot{stroke:var(--rail-hot);stroke-width:4;}
 @media (prefers-reduced-motion:reduce){.tile,.tile .tile-card,.road-line,.rail-line,.rail-tie{transition:none;}}
 @media (max-width:840px){ .stage{flex-direction:column;} .side-col{position:static;width:100%;} .map-col{width:100%;} }
+@media (min-width:841px){ #panel-adventure .kc-scope svg{width:auto !important;height:min(86vh,900px);max-width:100%;margin:0 auto;} .map-wrap{width:max-content;max-width:100%;} }
 </style></head><body>
 <div class="wrap">
   <header class="app-header">

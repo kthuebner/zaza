@@ -90,7 +90,7 @@
     function done(){ const total=cur.questions.length, star=correct>=3;
       ctx.state.storiesDone=ctx.state.storiesDone||{}; ctx.state.storiesDone[cur.id]=true;
       ctx.award({coins:correct*2, star});
-      host.innerHTML='<div class="center"><div style="font-size:50px">'+(star?'🌟':'📚')+'</div>'+
+      host.innerHTML='<div class="center">'+(star?'<img src="'+ctx.clover.cele+'" style="height:130px" alt="">':'<div style="font-size:50px">📚</div>')+
         '<h2>'+(star?'Star earned!':'Nice reading!')+'</h2>'+
         '<p class="sub">You got '+correct+' of '+total+' right and earned '+(correct*2)+' coins.'+(star?'':' Get 3+ to earn the \u2B50.')+'</p>'+
         '<div class="row" style="justify-content:center"><button class="btn green" id="more">More stories</button>'+

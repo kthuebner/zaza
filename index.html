@@ -238,9 +238,17 @@ function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)re
  for(let i=0;i<22;i++){const c=document.createElement('div');c.className='confetti';c.textContent=em[Math.floor(Math.random()*em.length)];c.style.left=Math.random()*100+'vw';c.style.animationDuration=(1.6+Math.random()*1.3)+'s';c.style.fontSize=(15+Math.random()*15)+'px';document.body.appendChild(c);setTimeout(()=>c.remove(),3100);}}
 function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const i=document.createElement('img');i.src=CLOVER.cele;i.className='cele-pop';i.alt='';document.body.appendChild(i);setTimeout(()=>i.remove(),1900);}
 </script>
-<script src="games/library.js"></script>
-<script src="games/soccerfields.js"></script>
-<script src="games/borderstar.js"></script>
+<script>
+/* Auto-load a game file for every stop. Drop games/<name>.js into the folder
+   and it goes live on the next page load. Files that don't exist yet are
+   skipped silently (a harmless 404 in the console until you add them). */
+(function(){
+  var GAMES=['library.js','soccerfields.js','borderstar.js','zoo.js','mcclains.js','pool.js',
+             'lightrail.js','nelson.js','hospital.js','unionstation.js','kauffman.js',
+             'rivermarket.js','kccurrent.js','climbinggym.js','bridge.js','rodeo.js'];
+  GAMES.forEach(function(f){ var s=document.createElement('script'); s.src='games/'+f; s.async=false; s.onerror=function(){}; document.head.appendChild(s); });
+})();
+</script>
 <script>
 
 (function(){
@@ -488,7 +496,7 @@ function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)r
   var tiles=document.querySelectorAll('#map .tile');
   tiles.forEach(function(g){
     g.style.cursor='pointer';
-    g.addEventListener('click',function(e){ e.stopPropagation(); handle(g); });
+    g.addEventListener('pointerup',function(e){ e.stopPropagation(); handle(g); });
     g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handle(g); } });
   });
   renderHUD();applyMapState();renderWelcome();

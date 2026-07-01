@@ -82,8 +82,8 @@
       }).join('');
       return ''+
       '<svg id="mcc-cake" viewBox="0 0 200 220" width="230" height="253" style="cursor:pointer;touch-action:manipulation;display:block;margin:0 auto;">'+
-        '<defs><clipPath id="mccLinerClip"><path d="M40,204 L160,204 L142,138 L58,138 Z"/></clipPath></defs>'+
-        '<path d="M40,204 L160,204 L142,138 L58,138 Z" fill="'+sel.liner+'"/>'+
+        '<defs><clipPath id="mccLinerClip"><path d="M58,204 L142,204 L160,138 L40,138 Z"/></clipPath></defs>'+
+        '<path d="M58,204 L142,204 L160,138 L40,138 Z" fill="'+sel.liner+'"/>'+
         '<g clip-path="url(#mccLinerClip)">'+stripes(sel.liner)+'</g>'+
         '<rect x="66" y="126" width="68" height="18" rx="5" fill="#eecaa1"/>'+
         '<ellipse cx="100" cy="122" rx="58" ry="26" fill="'+sel.frosting+'"/>'+

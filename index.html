@@ -154,9 +154,10 @@ let state=load();
 function load(){try{const r=localStorage.getItem(SKEY);return Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),r?JSON.parse(r):{});}catch(e){return JSON.parse(JSON.stringify(DEFAULTS));}}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(state));}catch(e){}}
 const TREATS={'3C':{emoji:'🧋',name:'Boba Tea'},'6D':{emoji:'🥧',name:'Key Lime Pie'}};
-const STARS_TO_UNLOCK=3;
+const TIER_REQ={2:3,3:6};
 function tierOf(key){const row=+key[0];return row>=7?1:row>=4?2:3;}
-function starsInTier(t){return Object.keys(state.stars).filter(k=>tierOf(k)===t).length;}
+function totalStars(){return Object.keys(state.stars).length;}
+function starsToNext(){return Math.max(1,(state.unlockedTiers<2?TIER_REQ[2]:TIER_REQ[3])-totalStars());}
 const KCMath={gen(op,lvl){const r=(a,b)=>Math.floor(Math.random()*(b-a+1))+a,M='\u2212',X='\u00d7';
  const add=()=>{let a,b;if(lvl===0){a=r(1,12);b=r(1,Math.max(1,20-a));}else if(lvl===1){a=r(5,49);b=r(2,50);}else{a=r(10,89);b=r(2,Math.max(2,99-a));}return{q:a+' + '+b,a:a+b};};
  const sub=()=>{let a,b;if(lvl===0){a=r(2,20);b=r(1,a);}else if(lvl===1){a=r(20,60);b=r(2,a-1);}else{a=r(40,99);b=r(10,a-1);}return{q:a+' '+M+' '+b,a:a-b};};
@@ -174,10 +175,8 @@ function applyMapState(){$$('#map .tile').forEach(g=>{const key=g.dataset.key;co
  if(locked&&!lk){let b;try{b=g.getBBox();}catch(e){b=null;}if(b){const t=document.createElementNS(NS,'text');t.setAttribute('class','kc-lock');t.setAttribute('x',b.x+b.width/2);t.setAttribute('y',b.y+b.height/2+10);t.setAttribute('text-anchor','middle');t.textContent='🔒';g.appendChild(t);}}
  if(!locked&&lk)lk.remove();
  if(state.stars[key])addStarBadge(g);});}
-function recomputeUnlocks(){let ch=false;
- if(state.unlockedTiers<2&&starsInTier(1)>=STARS_TO_UNLOCK){state.unlockedTiers=2;ch=true;}
- if(state.unlockedTiers<3&&starsInTier(2)>=STARS_TO_UNLOCK){state.unlockedTiers=3;ch=true;}
- if(ch){save();applyMapState();}return ch;}
+function recomputeUnlocks(){var n=totalStars();var target=n>=TIER_REQ[3]?3:(n>=TIER_REQ[2]?2:1);
+ if(target>state.unlockedTiers){state.unlockedTiers=target;save();applyMapState();return true;}return false;}
 function award(key,o){o=o||{};if(o.coins)state.coins+=o.coins;let ns=false;
  if(o.star&&!state.stars[key]){state.stars[key]=true;ns=true;}
  if(o.treat&&TREATS[key])state.treats[key]=true;
@@ -204,7 +203,7 @@ function panelHead(meta,locked){return '<div class="side-hero'+(locked?' locked'
 function openStop(key){const meta=tileMeta(key);
  if(tierOf(key)>state.unlockedTiers){
    side.innerHTML=panelHead(meta,true);
-   $('#sideBody').innerHTML='<p class="locknote">🔒 Locked</p><p class="cs">Earn '+STARS_TO_UNLOCK+' ⭐ in the open part of the city, then Clover can travel here!</p><div class="center"><button class="btn ghost sm" id="bk">← Back to map</button></div>';
+   $('#sideBody').innerHTML='<p class="locknote">🔒 Locked</p><p class="cs">Earn '+starsToNext()+' more ⭐ in the open part of the city, then Clover can travel here!</p><div class="center"><button class="btn ghost sm" id="bk">← Back to map</button></div>';
    $('#bk').onclick=renderWelcome;
    if(window.innerWidth<=840)side.scrollIntoView({behavior:'smooth'});return;}
  side.innerHTML=panelHead(meta,false);const host=$('#sideBody');
@@ -499,7 +498,7 @@ function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)r
     g.addEventListener('pointerup',function(e){ e.stopPropagation(); handle(g); });
     g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handle(g); } });
   });
-  renderHUD();applyMapState();renderWelcome();
+  renderHUD();recomputeUnlocks();applyMapState();renderWelcome();
 })();
 </script>
 </body></html>

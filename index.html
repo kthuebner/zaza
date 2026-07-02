@@ -149,7 +149,7 @@ const CLOVER={head:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAAGFCAYAAA
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 const NS='http://www.w3.org/2000/svg';
 const SKEY='clover_playground_kc_v1';
-const DEFAULTS={name:'',coins:0,stars:{},treats:{},unlockedTiers:1,storiesDone:{}};
+const DEFAULTS={name:'',coins:0,stars:{},treats:{},unlockedTiers:1,storiesDone:{},at:'9D'};
 let state=load();
 function load(){try{const r=localStorage.getItem(SKEY);return Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),r?JSON.parse(r):{});}catch(e){return JSON.parse(JSON.stringify(DEFAULTS));}}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(state));}catch(e){}}
@@ -491,14 +491,121 @@ function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)r
 </script>
 <script>
 (function(){
-  function handle(g){ try{ openStop(g.dataset.key); }catch(err){ toast('Oops: '+err.message); } }
-  var tiles=document.querySelectorAll('#map .tile');
-  tiles.forEach(function(g){
-    g.style.cursor='pointer';
-    g.addEventListener('pointerup',function(e){ e.stopPropagation(); handle(g); });
-    g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); handle(g); } });
+  var mapEl=document.getElementById('map');
+  var S=100,PAD_L=56,PAD_T=56,COLS='ABCDEF';
+  function center(key){var col=COLS.indexOf(key[1]),row=+key[0];return [PAD_L+col*S+S/2, PAD_T+(row-1)*S+S/2];}
+
+  // Pathway network: the map's own roads + rail, plus the new 7C<->7F link.
+  // Each edge is a straight run; we expand it into the cells it passes through
+  // so Clover hops cell-by-cell along the route.
+  var EDGES=[['1E','2E'],['2E','3E'],['3C','3E'],['5C','5A'],['7C','6C'],['7C','8C'],
+             ['8C','8F'],['7F','8F'],['6D','6C'],['9D','9C'],['9C','8C'],['9C','9A'],
+             ['6C','5C'],['5C','4C'],['4C','3C'],['7C','7F'],['2A','5A']];
+  function cellsBetween(a,b){var r1=+a[0],c1=COLS.indexOf(a[1]),r2=+b[0],c2=COLS.indexOf(b[1]),out=[];
+    if(c1===c2){for(var r=Math.min(r1,r2);r<=Math.max(r1,r2);r++)out.push(r+a[1]);}
+    else{for(var c=Math.min(c1,c2);c<=Math.max(c1,c2);c++)out.push(r1+COLS[c]);}return out;}
+  var cellAdj={};
+  function link(a,b){(cellAdj[a]=cellAdj[a]||[]).push(b);(cellAdj[b]=cellAdj[b]||[]).push(a);}
+  EDGES.forEach(function(e){var cs=cellsBetween(e[0],e[1]);for(var i=0;i<cs.length-1;i++)link(cs[i],cs[i+1]);});
+
+  function passable(cell){return tierOf(cell)<=state.unlockedTiers;}
+  function findPath(start,goal){
+    if(start===goal)return [start];
+    if(!passable(goal))return null;
+    var q=[start],prev={},seen={};seen[start]=1;
+    while(q.length){var cur=q.shift(),nb=cellAdj[cur]||[];
+      for(var i=0;i<nb.length;i++){var n=nb[i];
+        if(seen[n]||!passable(n))continue; seen[n]=1;prev[n]=cur;
+        if(n===goal){var p=[n];while(p[0]!==start)p.unshift(prev[p[0]]);return p;}
+        q.push(n);}}
+    return null;}
+
+  // ---- new roads (match the map's own road style) + visual polish ----
+  var layers=mapEl.querySelectorAll(':scope > g');
+  var gLand=layers[0], gWater=layers[1], gCity=layers[2], gRoads=layers[4]||mapEl;
+  function cellXk(k){return PAD_L+COLS.indexOf(k[1])*S;}
+  function cellYk(k){return PAD_T+(+k[0]-1)*S;}
+  function mk(t,a){var n=document.createElementNS(NS,t);for(var k in a)n.setAttribute(k,a[k]);return n;}
+
+  function drawRoad(a,b){var A=center(a),B=center(b);
+    gRoads.appendChild(mk('line',{x1:A[0],y1:A[1],x2:B[0],y2:B[1],'class':'road-line',stroke:'var(--road)','stroke-width':8,'stroke-linecap':'round'}));
+    gRoads.appendChild(mk('line',{x1:A[0],y1:A[1],x2:B[0],y2:B[1],'class':'road-mid',stroke:'var(--road-mid)','stroke-width':2.5,'stroke-linecap':'round','stroke-dasharray':'2 9'}));}
+  drawRoad('7C','7F');   // Library <-> Soccer Fields
+  drawRoad('2A','5A');   // Rodeo <-> Hospital (down column A)
+
+  // 1) merge the river cells into one continuous waterway
+  Array.prototype.forEach.call(gWater.querySelectorAll('rect'),function(rc){
+    if((rc.getAttribute('fill')||'').indexOf('watergrad')<0)return;
+    var x=+rc.getAttribute('x'), y=+rc.getAttribute('y');
+    rc.setAttribute('x',x-2);rc.setAttribute('y',y-2);rc.setAttribute('width',S);rc.setAttribute('height',S);rc.setAttribute('rx',0);rc.setAttribute('stroke','none');
   });
-  renderHUD();recomputeUnlocks();applyMapState();renderWelcome();
+  gWater.appendChild(mk('path',{d:'M56 56 L256 56 L256 156 L656 156 L656 256 L156 256 L156 156 L56 156 Z',
+    fill:'none',stroke:'var(--water-edge)','stroke-width':3,'stroke-linejoin':'round','stroke-opacity':0.55}));
+
+  // 2) windows on the tall downtown buildings (grey rects in gCity)
+  var GREY=['#cbc7ba','#c1bdaf','#d3cfc1'];
+  Array.prototype.slice.call(gCity.querySelectorAll('rect')).forEach(function(rc){
+    if(GREY.indexOf(rc.getAttribute('fill'))<0)return; var h=+rc.getAttribute('height'); if(h<18)return;
+    var x=+rc.getAttribute('x'),y=+rc.getAttribute('y'),w=+rc.getAttribute('width');
+    var cols=Math.max(1,Math.round((w-4)/5)), rows=Math.max(1,Math.round((h-8)/7));
+    for(var ci=0;ci<cols;ci++)for(var ri=0;ri<rows;ri++){
+      gCity.appendChild(mk('rect',{x:(x+3+ci*5).toFixed(1),y:(y+5+ri*7).toFixed(1),width:2.4,height:3.2,
+        fill:((ci+ri)%4===0)?'#ffe6a3':'#cfe6f4','fill-opacity':0.8}));}
+  });
+
+  // 3) a few ponds in green open cells
+  ['1D','5B','6F','5E','8E','3D','9F'].forEach(function(k){var x=cellXk(k),y=cellYk(k);
+    gLand.appendChild(mk('ellipse',{cx:x+52,cy:y+64,rx:24,ry:13,fill:'#8fd3ea',stroke:'#5bb4d6','stroke-width':1.5,'fill-opacity':0.92}));
+    gLand.appendChild(mk('ellipse',{cx:x+44,cy:y+59,rx:7,ry:2.5,fill:'#ffffff','fill-opacity':0.5}));
+  });
+
+  // 4) a tiny creek weaving along the row 6 / row 7 boundary
+  var cyB=PAD_T+6*S, d='M 80 '+cyB;
+  for(var xx=80;xx<=632;xx+=16){ d+=' L '+xx.toFixed(1)+' '+(cyB+5*Math.sin(xx/26)).toFixed(1); }
+  gWater.appendChild(mk('path',{d:d,fill:'none',stroke:'#7fc9e6','stroke-width':7,'stroke-linecap':'round','stroke-opacity':0.85}));
+  gWater.appendChild(mk('path',{d:d,fill:'none',stroke:'#ffffff','stroke-width':2,'stroke-linecap':'round','stroke-opacity':0.4}));
+
+  renderHUD();recomputeUnlocks();
+
+  // Clover token that hops along the roads
+  var facing=1, moving=false;
+  var clover={cell:(state.at&&passable(state.at))?state.at:'9D'};
+  var tokG=document.createElementNS(NS,'g');tokG.setAttribute('id','cloverTok');
+  tokG.style.pointerEvents='none';tokG.style.filter='drop-shadow(0 3px 2px rgba(0,0,0,.35))';
+  var img=document.createElementNS(NS,'image');img.setAttribute('width',74);img.setAttribute('height',74);
+  img.setAttribute('x',-37);img.setAttribute('y',-46);
+  img.setAttribute('href',CLOVER.run);img.setAttributeNS('http://www.w3.org/1999/xlink','href',CLOVER.run);
+  tokG.appendChild(img);mapEl.appendChild(tokG);
+  function place(cell){var c=center(cell);tokG.setAttribute('transform','translate('+c[0]+','+c[1]+') scale('+facing+',1)');}
+  place(clover.cell);
+
+  function hop(from,to){return new Promise(function(res){var a=center(from),b=center(to);
+    if(b[0]<a[0]-1)facing=-1;else if(b[0]>a[0]+1)facing=1;
+    var dur=270,t0=null,H=42;
+    function fr(ts){if(!t0)t0=ts;var k=Math.min(1,(ts-t0)/dur);
+      var x=a[0]+(b[0]-a[0])*k,y=a[1]+(b[1]-a[1])*k-H*Math.sin(Math.PI*k);
+      tokG.setAttribute('transform','translate('+x+','+y+') scale('+facing+',1)');
+      if(k<1)requestAnimationFrame(fr);else res();}
+    requestAnimationFrame(fr);});}
+  function moveAlong(path){var i=1;return new Promise(function(res){
+    (function step(){ if(i>=path.length){clover.cell=path[path.length-1];state.at=clover.cell;save();return res();}
+      hop(path[i-1],path[i]).then(function(){i++;step();}); })();});}
+
+  function go(g){var key=g.dataset.key; if(moving)return;
+    if(key===clover.cell){ openStop(key); return; }            // already here -> enter
+    if(!passable(key)){ openStop(key); return; }                // locked -> show "earn stars" panel
+    var path=findPath(clover.cell,key);
+    if(!path){ toast('Clover can\u2019t find a path there yet!'); return; }
+    moving=true; moveAlong(path).then(function(){ moving=false; openStop(key); });
+  }
+
+  document.querySelectorAll('#map .tile').forEach(function(g){
+    g.style.cursor='pointer';
+    g.addEventListener('pointerup',function(e){ e.stopPropagation(); go(g); });
+    g.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); go(g); } });
+  });
+
+  applyMapState();renderWelcome();
 })();
 </script>
 </body></html>

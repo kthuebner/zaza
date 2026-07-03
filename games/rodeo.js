@@ -50,10 +50,10 @@
         </div>
         <div class="rodeo-arena" style="position:relative;border-radius:16px;overflow:hidden;margin:10px 0;box-shadow:0 2px 10px rgba(0,0,0,0.15);">
           <img src="${ARENA}" alt="Rodeo arena" style="width:100%;display:block;">
-          <div class="rodeo-track" style="position:absolute;left:6%;right:6%;bottom:14%;height:6px;background:rgba(255,255,255,0.55);border-radius:4px;">
+          <div class="rodeo-track" style="position:absolute;left:6%;right:6%;top:46%;height:6px;background:rgba(255,255,255,0.55);border-radius:4px;">
             <div class="rodeo-fill" style="width:${trackPct}%;height:100%;background:var(--brand-red,#CF3339);border-radius:4px;transition:width .5s ease;"></div>
           </div>
-          <img id="riderImg" src="${RIDER}" alt="Kid riding a sheep" style="position:absolute;bottom:16%;left:calc(6% + ${trackPct}% - 30px);width:90px;transition:left .5s ease;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));">
+          <img id="riderImg" src="${RIDER}" alt="Kid riding a sheep" style="position:absolute;top:46%;left:calc(6% + ${trackPct}% - 30px);width:90px;transform:translateY(-50%) scaleX(-1);transition:left .5s ease;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));">
         </div>
         <div class="center">
           <div class="bigproblem" id="probText">${prob.q} = ?</div>

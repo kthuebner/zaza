@@ -17,7 +17,7 @@ background:radial-gradient(1100px 420px at 50% -6%,#d7f1f0,transparent 70%),line
 .hud{margin-left:auto;display:flex;gap:7px;}
 .chip{display:flex;align-items:center;gap:6px;background:#0f3145;border:1px solid #1d4a63;border-radius:999px;padding:6px 12px;font-weight:800;font-size:15px;}
 .chip.pop{animation:pop .4s ease;}@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.22)}100%{transform:scale(1)}}
-nav.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:12px 0 14px;}
+nav.tabs{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:12px 0 14px;}
 .tab{appearance:none;border:2px solid var(--line);background:var(--cream);border-radius:15px;padding:9px 4px;cursor:pointer;
 font-family:'Fredoka',sans-serif;font-weight:600;color:var(--ink-soft);font-size:14px;display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:var(--shadow-sm);}
 .tab .emo{font-size:21px;}.tab[aria-selected="true"]{background:var(--ink);color:#fff;border-color:var(--ink);}
@@ -70,6 +70,13 @@ h3{font-family:'Fredoka',sans-serif;font-weight:600;margin:0 0 8px;}
 .dash-box{background:var(--paper);border:2px solid var(--line);border-radius:14px;padding:12px;text-align:center;}
 .dash-box .num{font-family:'Fredoka',sans-serif;font-weight:700;font-size:28px;}
 .shelf{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(116px,1fr));gap:10px;margin:6px 0 18px;}
+.shop-item{border:2px solid var(--line);border-radius:14px;padding:10px 8px;text-align:center;background:#fff;position:relative;}
+.shop-emoji{font-size:38px;line-height:1;}
+.shop-name{font-family:'Fredoka',sans-serif;font-weight:600;font-size:13px;margin:5px 0 8px;color:var(--ink);}
+.shop-own{position:absolute;top:6px;right:8px;background:var(--sun);color:var(--ink);font-weight:800;font-size:11px;border-radius:999px;padding:1px 7px;}
+.btn.buy{background:var(--green);box-shadow:0 4px 0 var(--green-deep);width:100%;padding:8px 6px;font-size:15px;}
+.btn.buy.cant{background:#cfd8d2;box-shadow:0 4px 0 #b3bcb6;color:#fff;}
 .treat{width:50px;height:50px;border-radius:12px;border:2px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:24px;background:#fff;filter:grayscale(1) opacity(.4);}
 .treat.have{filter:none;border-style:solid;border-color:var(--sun);background:#fff6df;}
 .nameinput{font-family:'Fredoka',sans-serif;font-weight:600;font-size:16px;border:2px solid var(--line);border-radius:10px;padding:7px 10px;width:160px;}
@@ -115,6 +122,7 @@ h3{font-family:'Fredoka',sans-serif;font-weight:600;margin:0 0 8px;}
     <button class="tab" role="tab" aria-selected="false" data-tab="math"><span class="emo">⏱️</span>Math Challenge</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="story"><span class="emo">📖</span>Story Time</button>
     <button class="tab" role="tab" aria-selected="false" data-tab="geo"><span class="emo">🌍</span>Geography</button>
+    <button class="tab" role="tab" aria-selected="false" data-tab="shop"><span class="emo">🎁</span>Prize Shop</button>
   </nav>
 
   <section class="panel active" id="panel-adventure">
@@ -142,6 +150,7 @@ h3{font-family:'Fredoka',sans-serif;font-weight:600;margin:0 0 8px;}
   <section class="panel" id="panel-math"><div class="card" id="mathHost" style="max-width:680px;margin:0 auto"></div></section>
   <section class="panel" id="panel-story"><div class="card" id="storyHost" style="max-width:680px;margin:0 auto"></div></section>
   <section class="panel" id="panel-geo"><div class="card center" style="max-width:680px;margin:0 auto"><h2>🌍 Geography Challenge</h2><p class="sub">States &amp; continents maps land in this tab next.</p><p class="cs">🐰 Clover's packing her suitcase…</p></div></section>
+  <section class="panel" id="panel-shop"><div class="card" id="shopHost" style="max-width:680px;margin:0 auto"></div></section>
 </div>
 <div id="toast"></div>
 <script>
@@ -149,7 +158,7 @@ const CLOVER={head:"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQYAAAGFCAYAAA
 const $=s=>document.querySelector(s),$$=s=>Array.from(document.querySelectorAll(s));
 const NS='http://www.w3.org/2000/svg';
 const SKEY='clover_playground_kc_v1';
-const DEFAULTS={name:'',coins:0,stars:{},treats:{},unlockedTiers:1,storiesDone:{},at:'9D'};
+const DEFAULTS={name:'',coins:0,stars:{},treats:{},unlockedTiers:1,storiesDone:{},at:'9D',prizes:{}};
 let state=load();
 function load(){try{const r=localStorage.getItem(SKEY);return Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),r?JSON.parse(r):{});}catch(e){return JSON.parse(JSON.stringify(DEFAULTS));}}
 function save(){try{localStorage.setItem(SKEY,JSON.stringify(state));}catch(e){}}
@@ -219,18 +228,55 @@ function renderHome(host){const tot=Object.keys(state.stars).length;
  '<h3 class="mt">🍰 Treat Shelf</h3><div class="shelf">'+Object.keys(TREATS).map(k=>'<div class="treat '+(state.treats[k]?'have':'')+'" title="'+TREATS[k].name+'">'+TREATS[k].emoji+'</div>').join('')+'</div>'+
  '<h3 class="mt">💾 Backup</h3><p class="sub">Saves on this device. Export a backup to keep it safe or move devices.</p>'+
  '<div class="row"><button class="btn teal sm" id="exp">⬇ Export</button><button class="btn ghost sm" id="imp">⬆ Import</button><input type="file" id="impf" accept="application/json" style="display:none"></div>'+
- '<div class="center mt"><button class="btn ghost sm" id="bk">← Back to map</button></div>';
+ '<div class="center mt"><button class="btn teal sm" id="goshop">🎁 Prize Shop</button> <button class="btn ghost sm" id="bk">← Back to map</button></div>';
  const nm=$('#hn');nm.value=state.name;nm.oninput=e=>{state.name=e.target.value.trim();save();};
- $('#exp').onclick=exp;$('#imp').onclick=()=>$('#impf').click();$('#impf').onchange=imp;$('#bk').onclick=renderWelcome;}
+ $('#exp').onclick=exp;$('#imp').onclick=()=>$('#impf').click();$('#impf').onchange=imp;$('#bk').onclick=renderWelcome;var gs=$('#goshop');if(gs)gs.onclick=function(){setTab('shop');};}
 function exp(){const b=new Blob([JSON.stringify(state)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='clover-progress.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('Backup saved!');}
 function imp(e){const f=e.target.files[0];if(!f)return;const rd=new FileReader();rd.onload=()=>{try{state=Object.assign(JSON.parse(JSON.stringify(DEFAULTS)),JSON.parse(rd.result));save();renderHUD();applyMapState();openStop('9D');toast('Backup loaded!');}catch(x){toast('Could not read that file.');}};rd.readAsText(f);}
+
+const PRIZES=[
+ {id:'balloon',emoji:'🎈',name:'Balloon',cost:6},
+ {id:'cookie',emoji:'🍪',name:'Cookie',cost:8},
+ {id:'donut',emoji:'🍩',name:'Donut',cost:10},
+ {id:'icecream',emoji:'🍦',name:'Ice Cream',cost:12},
+ {id:'cupcake',emoji:'🧁',name:'Cupcake',cost:14},
+ {id:'boba',emoji:'🧋',name:'Boba Tea',cost:15},
+ {id:'rainbow',emoji:'🌈',name:'Rainbow',cost:18},
+ {id:'pie',emoji:'🥧',name:'Key Lime Pie',cost:20},
+ {id:'ball',emoji:'⚽',name:'Soccer Ball',cost:25},
+ {id:'medal',emoji:'🏅',name:'Medal',cost:30},
+ {id:'guitar',emoji:'🎸',name:'Guitar',cost:35},
+ {id:'trophy',emoji:'🏆',name:'Trophy',cost:45},
+ {id:'crown',emoji:'👑',name:'Crown',cost:55},
+ {id:'unicorn',emoji:'🦄',name:'Unicorn',cost:60}
+];
+function prizeById(id){for(var i=0;i<PRIZES.length;i++)if(PRIZES[i].id===id)return PRIZES[i];}
+function renderShop(host){if(!host)return;var owned=PRIZES.filter(function(p){return state.prizes[p.id];});
+ host.innerHTML='<h2>🎁 Prize Shop</h2>'+
+  '<p class="sub">Spend your coins on prizes for Clover! You have 🪙 <b>'+state.coins+'</b> coins.</p>'+
+  '<div class="shop-grid">'+PRIZES.map(function(p){var n=state.prizes[p.id]||0;
+    return '<div class="shop-item">'+(n?'<span class="shop-own">×'+n+'</span>':'')+
+      '<div class="shop-emoji">'+p.emoji+'</div><div class="shop-name">'+p.name+'</div>'+
+      '<button class="btn buy'+(state.coins<p.cost?' cant':'')+'" data-id="'+p.id+'">🪙 '+p.cost+'</button></div>';}).join('')+'</div>'+
+  '<h3>🎉 Clover\u2019s Prize Shelf</h3><div class="shelf">'+
+    (owned.length?owned.map(function(p){return '<div class="treat have" title="'+p.name+'">'+p.emoji+(state.prizes[p.id]>1?'<b style="font-size:11px">×'+state.prizes[p.id]+'</b>':'')+'</div>';}).join('')
+     :'<p class="cs">No prizes yet — buy one above!</p>')+'</div>';
+ host.querySelectorAll('.buy').forEach(function(btn){btn.onclick=function(){buyPrize(btn.getAttribute('data-id'),host);};});
+}
+function buyPrize(id,host){var p=prizeById(id);if(!p)return;
+ if(state.coins<p.cost){toast('You need '+(p.cost-state.coins)+' more 🪙 for the '+p.name+'!');return;}
+ state.coins-=p.cost;state.prizes[id]=(state.prizes[id]||0)+1;save();renderHUD();confetti();
+ toast('You got a '+p.name+'! '+p.emoji);renderShop(host);
+}
 
 function setTab(id){$$('.tab').forEach(t=>t.setAttribute('aria-selected',t.dataset.tab===id));
  $$('.panel').forEach(p=>p.classList.toggle('active',p.id==='panel-'+id));
  if(id==='math'&&window.Stops.registry['7F'])window.Stops.registry['7F'].start($('#mathHost'),makeCtx('7F'));
  if(id==='story'&&window.Stops.registry['7C'])window.Stops.registry['7C'].start($('#storyHost'),makeCtx('7C'));
+ if(id==='shop')renderShop($('#shopHost'));
  window.scrollTo({top:0,behavior:'smooth'});}
 $$('.tab').forEach(t=>t.onclick=()=>setTab(t.dataset.tab));
+(function(){var cc=$('#chipCoins');if(cc){cc.style.cursor='pointer';cc.title='Spend coins in the Prize Shop';cc.onclick=function(){setTab('shop');};}})();
 
 let tT=null;function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(tT);tT=setTimeout(()=>t.classList.remove('show'),2600);}
 function confetti(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;const em=['⚽','🪙','⭐','🎉','🏆','🧋'];
@@ -553,9 +599,16 @@ function celebrate(){if(matchMedia('(prefers-reduced-motion: reduce)').matches)r
         fill:((ci+ri)%4===0)?'#ffe6a3':'#cfe6f4','fill-opacity':0.8}));}
   });
 
-  // 3) a few ponds in green open cells
+  // 3) a few ponds in green open cells (and clear any tree sitting on the water)
+  function inEll(cx,cy,px,py,rx,ry){var a=(cx-px)/rx,b=(cy-py)/ry;return a*a+b*b<=1;}
   ['1D','5B','6F','5E','8E','3D','9F'].forEach(function(k){var x=cellXk(k),y=cellYk(k);
-    gLand.appendChild(mk('ellipse',{cx:x+52,cy:y+64,rx:24,ry:13,fill:'#8fd3ea',stroke:'#5bb4d6','stroke-width':1.5,'fill-opacity':0.92}));
+    var px=x+52,py=y+64,rx=24,ry=13;
+    Array.prototype.slice.call(gCity.querySelectorAll('circle,rect')).forEach(function(el){
+      var f=el.getAttribute('fill');
+      if(f==='#8fb86a'||f==='#a6c884'){ if(inEll(+el.getAttribute('cx'),+el.getAttribute('cy'),px,py,rx+10,ry+12))el.remove(); }
+      else if(f==='#9c7b4f'){ if(inEll(+el.getAttribute('x')+1.5,+el.getAttribute('y'),px,py,rx+10,ry+12))el.remove(); }
+    });
+    gLand.appendChild(mk('ellipse',{cx:px,cy:py,rx:rx,ry:ry,fill:'#8fd3ea',stroke:'#5bb4d6','stroke-width':1.5,'fill-opacity':0.92}));
     gLand.appendChild(mk('ellipse',{cx:x+44,cy:y+59,rx:7,ry:2.5,fill:'#ffffff','fill-opacity':0.5}));
   });
 

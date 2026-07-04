@@ -20,6 +20,11 @@
         border-radius:999px;padding:3px 12px;font-weight:800;font-size:13px;margin-left:6px;}
       @keyframes kf-pop{0%{transform:scale(.8);opacity:0;}100%{transform:scale(1);opacity:1;}}
       .kf-pop{animation:kf-pop .25s ease;}
+      .kf-composebar{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:10px;}
+      .kf-songline{text-align:center;font-size:16px;font-weight:800;color:#081F2C;
+        min-height:26px;letter-spacing:2px;margin-top:8px;}
+      .kf-hint-warm{text-align:center;font-size:13px;color:#8a5a12;margin-top:4px;}
+      .kf-slotcount{text-align:center;font-size:13px;font-weight:700;opacity:.7;margin-top:2px;}
     `;
     document.head.appendChild(css);
   }
@@ -110,6 +115,10 @@
     var firstTryRight = 0;
     var coinsEarned = 0;
     var triedThisQ = false;
+    var composeNotes = [];       // indices (0-8) of notes she's placed, in order
+    var composedSongLetters = ''; // finalized letters, shown on results
+    var COMPOSE_MAX = 8;
+    var COMPOSE_MIN = 3;
 
     var mnemHTML =
       '<div class="kf-mnem">' +
@@ -162,7 +171,7 @@
     }
 
     function renderQuestion(){
-      if(qIndex >= order.length){ return renderResults(); }
+      if(qIndex >= order.length){ return renderCompose(); }
       triedThisQ = false;
       var idx = order[qIndex];
       var letter = LETTERS[idx];
@@ -224,6 +233,91 @@
       }
     }
 
+    function composeStaffSVG(){
+      var notesMarkup = '';
+      composeNotes.forEach(function(posIdx, slot){
+        notesMarkup += noteGroup(posIdx, {
+          id: 'kf-comp-note-' + slot,
+          x: 112 + slot * 38,
+          fill: '#62CBC9'
+        });
+      });
+      // hit rects drawn AFTER notes so taps always register, even over an existing note
+      var hitMarkup = '';
+      for(var i=0;i<9;i++){
+        var y = YPOS[i];
+        hitMarkup += '<rect id="kf-add-'+i+'" x="90" y="'+(y-10)+'" width="350" height="20" fill="transparent" style="cursor:pointer;"/>';
+      }
+      return staffSVG(notesMarkup + hitMarkup);
+    }
+
+    function playComposedSong(){
+      composeNotes.forEach(function(idx, i){
+        setTimeout(function(){ playTone(FREQ[idx]); }, i * 550);
+      });
+    }
+
+    function renderCompose(){
+      var lettersLine = composeNotes.map(function(i){ return LETTERS[i]; }).join(' - ');
+      var full = composeNotes.length >= COMPOSE_MAX;
+      var canContinue = composeNotes.length >= COMPOSE_MIN;
+
+      host.innerHTML =
+        '<div class="kf-wrap">' +
+          '<p class="sub">Great reading! Now Clover needs a song to play on stage. Tap the staff to add your own notes and write one!</p>' +
+          '<div class="kf-staffbox">' + composeStaffSVG() + '</div>' +
+          '<div class="kf-songline">' + (lettersLine || '&nbsp;') + '</div>' +
+          '<div class="kf-slotcount">' + composeNotes.length + ' / ' + COMPOSE_MAX + ' notes' + (full ? ' — staff is full!' : '') + '</div>' +
+          '<div class="kf-composebar">' +
+            '<button class="btn teal sm" id="kf-play-song"' + (composeNotes.length ? '' : ' disabled') + '>▶ Play My Song</button>' +
+            '<button class="btn ghost sm" id="kf-undo"' + (composeNotes.length ? '' : ' disabled') + '>Undo</button>' +
+            '<button class="btn ghost sm" id="kf-clear"' + (composeNotes.length ? '' : ' disabled') + '>Clear</button>' +
+          '</div>' +
+          (canContinue
+            ? '<div class="center mt"><button class="btn green" id="kf-song-done">Finish My Song →</button></div>'
+            : '<p class="kf-hint-warm">Add at least ' + COMPOSE_MIN + ' notes to finish your song.</p>') +
+        '</div>';
+
+      var svg = host.querySelector('.kf-staffbox svg');
+      for(var i=0;i<9;i++){
+        (function(i){
+          var hit = svg.querySelector('#kf-add-'+i);
+          if(!hit) return;
+          hit.addEventListener('pointerup', function(){
+            if(composeNotes.length >= COMPOSE_MAX) return;
+            composeNotes.push(i);
+            playTone(FREQ[i]);
+            renderCompose();
+          });
+        })(i);
+      }
+
+      var playBtn = host.querySelector('#kf-play-song');
+      if(playBtn) playBtn.addEventListener('click', playComposedSong);
+
+      var undoBtn = host.querySelector('#kf-undo');
+      if(undoBtn) undoBtn.addEventListener('click', function(){
+        composeNotes.pop();
+        renderCompose();
+      });
+
+      var clearBtn = host.querySelector('#kf-clear');
+      if(clearBtn) clearBtn.addEventListener('click', function(){
+        composeNotes = [];
+        renderCompose();
+      });
+
+      var doneBtn = host.querySelector('#kf-song-done');
+      if(doneBtn) doneBtn.addEventListener('click', function(){
+        composedSongLetters = lettersLine;
+        var bonus = 3;
+        coinsEarned += bonus;
+        ctx.award({coins: bonus});
+        ctx.toast && ctx.toast('+' + bonus + ' coins for your song!');
+        renderResults();
+      });
+    }
+
     function renderResults(){
       var pct = Math.round((firstTryRight / order.length) * 100);
       var earnedStar = pct >= 70;
@@ -235,6 +329,9 @@
           '<h2 class="h2">' + (earnedStar ? 'Clover can read music now!' : 'Nice work helping Clover!') + '</h2>' +
           '<p class="sub">You got ' + firstTryRight + ' out of ' + order.length + ' notes right on the first try (' + pct + '%).</p>' +
           '<p class="sub">You earned <b>' + coinsEarned + ' coins</b>' + (earnedStar ? ' and a ⭐ star!' : '.') + '</p>' +
+          (composedSongLetters
+            ? '<p class="sub">🎼 Your song for Clover: <b>' + composedSongLetters + '</b></p>'
+            : '') +
           (earnedStar ? '' : '<p class="sub">Get 70% right on the first try to earn a star. Want to try again?</p>') +
           '<div class="row center mt">' +
             '<button class="btn green" id="kf-again">Play Again</button>' +
@@ -250,6 +347,7 @@
       host.querySelector('#kf-again').addEventListener('click', function(){
         order = shuffle(SPACE_IDX).concat(shuffle(LINE_IDX));
         qIndex = 0; firstTryRight = 0; coinsEarned = 0;
+        composeNotes = []; composedSongLetters = '';
         renderQuestion();
       });
       host.querySelector('#kf-map').addEventListener('click', function(){

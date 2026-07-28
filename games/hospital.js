@@ -79,7 +79,7 @@
             '<div class="sub">' + opts.intro + '</div>' +
           '</div>' +
           '<div class="row center mt">' +
-            '<img src="' + opts.imageSrc + '" alt="' + opts.imageAlt + '" style="max-width:260px;width:100%;border-radius:12px;" />' +
+            '<img src="' + opts.imageSrc + '" alt="' + opts.imageAlt + '" style="max-width:' + opts.imgMaxWidth + ';width:100%;border-radius:12px;" />' +
           '</div>' +
           '<div class="center mt">' +
             '<div class="sub">Question ' + (idx + 1) + ' of ' + order.length + '</div>' +
@@ -132,98 +132,94 @@
       render();
     }
 
-    function playLevel1(){
-      runQuiz({
-        pool: BONES,
-        title: "Clover's X-ray Check-Up — Level 1: Bones",
-        intro: "Clover twisted an ankle at soccer practice! Dr. Patel needs your help " +
-          "reading the X-ray so Clover gets the right care. Can you name the bones?",
-        imageSrc: SKELETON_IMG,
-        imageAlt: "Labeled skeleton",
-        questionText: function(q){ return 'Look at the skeleton picture above. Which bone is number ' + q.label + '?'; },
-        correctPrefix: function(q){ return 'That\'s right! Number ' + q.label + ' is the ' + q.correct.toLowerCase() + '.'; }
-      }, function(correct, total){
-        renderLevelTransition(correct, total);
-      });
-    }
-
-    function playLevel2(level1Correct, level1Total){
-      runQuiz({
-        pool: ORGANS,
-        title: "Clover's Check-Up — Level 2: Organs",
-        intro: "Great work, Doctor! Now Dr. Patel needs help naming the organs that keep " +
-          "Clover healthy and strong. Can you match each letter to the right organ?",
-        imageSrc: ORGANS_IMG,
-        imageAlt: "Labeled diagram of human organs",
-        questionText: function(q){ return 'Look at the diagram above. Which organ is labeled ' + q.label + '?'; },
-        correctPrefix: function(q){ return 'That\'s right! Letter ' + q.label + ' is the ' + q.correct.toLowerCase() + '.'; }
-      }, function(level2Correct, level2Total){
-        renderFinalSummary(level1Correct, level1Total, level2Correct, level2Total);
-      });
-    }
-
-    function renderLevelTransition(correct, total){
-      var doingWell = correct >= 6;
-      var cloverImg = doingWell ? ctx.clover.cele : ctx.clover.head;
-
+    function showMenu(){
       host.innerHTML =
         '<div class="center">' +
-          '<img src="' + cloverImg + '" alt="Clover" style="width:120px;" />' +
-          '<div class="h2 mt">Level 1 complete! ' + correct + ' / ' + total + ' bones named correctly.</div>' +
-          '<div class="sub mt">Dr. Patel is impressed! Ready to learn about the organs that keep Clover healthy?</div>' +
+          '<img src="' + ctx.clover.head + '" alt="Clover" style="width:120px;" />' +
+          '<div class="h2 mt">Clover\'s Check-Up</div>' +
+          '<div class="sub mt">Clover twisted an ankle at soccer practice and is visiting Dr. Patel! ' +
+          'Pick a challenge to help out.</div>' +
           '<div class="row center mt">' +
-            '<button class="btn green" id="continue">Continue to Level 2 →</button>' +
+            '<button class="btn green" id="playBones">🦴 Bones</button>' +
+            '<button class="btn teal" id="playOrgans">🫀 Organs</button>' +
+          '</div>' +
+          '<div class="row center mt">' +
             '<button class="btn ghost" id="done">← Map</button>' +
           '</div>' +
         '</div>';
 
-      host.querySelector('#continue').addEventListener('pointerup', function(){
-        playLevel2(correct, total);
-      });
+      host.querySelector('#playBones').addEventListener('pointerup', playBones);
+      host.querySelector('#playOrgans').addEventListener('pointerup', playOrgans);
       host.querySelector('#done').addEventListener('pointerup', function(){
         ctx.close();
       });
     }
 
-    function renderFinalSummary(c1, t1, c2, t2){
-      var totalCorrect = c1 + c2;
-      var totalQuestions = t1 + t2;
-      var star = totalCorrect >= 12;
-      var coins = totalCorrect;
+    function playBones(){
+      runQuiz({
+        pool: BONES,
+        title: "Clover's X-ray Check-Up — Bones",
+        intro: "Dr. Patel needs your help reading the X-ray so Clover gets the right care. " +
+          "Can you name the bones?",
+        imageSrc: SKELETON_IMG,
+        imageAlt: "Labeled skeleton",
+        imgMaxWidth: "260px",
+        questionText: function(q){ return 'Look at the skeleton picture above. Which bone is number ' + q.label + '?'; },
+        correctPrefix: function(q){ return 'That\'s right! Number ' + q.label + ' is the ' + q.correct.toLowerCase() + '.'; }
+      }, function(correct, total){
+        renderLevelSummary('bones', 'Bones', correct, total, playBones);
+      });
+    }
 
-      if (!ctx.state.hospitalStarEarned){
-        ctx.state.hospitalStarEarned = true;
+    function playOrgans(){
+      runQuiz({
+        pool: ORGANS,
+        title: "Clover's Check-Up — Organs",
+        intro: "Dr. Patel needs help naming the organs that keep Clover healthy and strong. " +
+          "Can you match each letter to the right organ?",
+        imageSrc: ORGANS_IMG,
+        imageAlt: "Labeled diagram of human organs",
+        imgMaxWidth: "380px",
+        questionText: function(q){ return 'Look at the diagram above. Which organ is labeled ' + q.label + '?'; },
+        correctPrefix: function(q){ return 'That\'s right! Letter ' + q.label + ' is the ' + q.correct.toLowerCase() + '.'; }
+      }, function(correct, total){
+        renderLevelSummary('organs', 'Organs', correct, total, playOrgans);
+      });
+    }
+
+    function renderLevelSummary(key, levelName, correct, total, replayFn){
+      var star = correct >= 6;
+      var coins = correct;
+      var flagName = 'hospital' + key.charAt(0).toUpperCase() + key.slice(1) + 'StarEarned';
+
+      if (!ctx.state[flagName]){
+        ctx.state[flagName] = true;
         ctx.award({ coins: coins, star: star });
         if (ctx.confetti && star) ctx.confetti();
       }
 
       var cloverImg = star ? ctx.clover.cele : ctx.clover.head;
       var msg = star
-        ? 'Clover is all patched up thanks to you! Dr. Patel says you\'d make a great doctor.'
-        : 'Clover feels much better already! Come back and visit the hospital again anytime.';
+        ? 'Great work! Dr. Patel says you\'d make a great doctor.'
+        : 'Nice try! Come back and visit the hospital again anytime.';
 
       host.innerHTML =
         '<div class="center">' +
           '<img src="' + cloverImg + '" alt="Clover" style="width:120px;" />' +
-          '<div class="h2 mt">Bones: ' + c1 + ' / ' + t1 + ' &nbsp;•&nbsp; Organs: ' + c2 + ' / ' + t2 + '</div>' +
-          '<div class="sub mt">' + totalCorrect + ' / ' + totalQuestions + ' total correct!</div>' +
+          '<div class="h2 mt">' + levelName + ': ' + correct + ' / ' + total + ' correct!</div>' +
           '<div class="sub mt">' + msg + '</div>' +
           (star ? '<div class="sub mt">⭐ You earned a star!</div>' : '') +
           '<div class="row center mt">' +
             '<button class="btn green" id="again">Play Again</button>' +
-            '<button class="btn ghost" id="done">← Map</button>' +
+            '<button class="btn teal" id="menu">← Menu</button>' +
           '</div>' +
         '</div>';
 
-      host.querySelector('#again').addEventListener('pointerup', function(){
-        playLevel1();
-      });
-      host.querySelector('#done').addEventListener('pointerup', function(){
-        ctx.close();
-      });
+      host.querySelector('#again').addEventListener('pointerup', replayFn);
+      host.querySelector('#menu').addEventListener('pointerup', showMenu);
     }
 
-    playLevel1();
+    showMenu();
   }
 
   window.Stops.register('5A', { name: 'Hospital', start: start });

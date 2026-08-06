@@ -32,9 +32,7 @@
         {label:'Seed head', img:IMG.dand_1_seedhead},
         {label:'Drifting seed', img:IMG.dand_2_singleseed},
         {label:'Sprouting', img:IMG.dand_3_sprout},
-        {label:'Seedling', img:IMG.dand_4_seedling},
         {label:'Rosette', img:IMG.dand_5_rosette},
-        {label:'Bud', img:IMG.dand_6_bud},
         {label:'Flower', img:IMG.dand_7_flower},
         {label:'Full bloom', img:IMG.dand_8_bloom}
       ]},
@@ -79,21 +77,21 @@
       + '.cg-clover{position:absolute;width:9%;transform:translate(-50%,-95%);filter:drop-shadow(0 3px 3px rgba(0,0,0,.4));z-index:5;transition:left .5s ease, top .5s ease;}'
       + '.cg-clover img{display:block;width:100%;}'
       + '.cg-flag{position:absolute;font-size:6vw;transform:translate(-50%,-100%);}'
-      + '.cg-overlay{position:absolute;left:1.5%;top:3%;width:34%;background:rgba(8,31,44,.82);border:2px solid rgba(98,203,201,.5);border-radius:12px;padding:10px 12px;color:#fff;box-sizing:border-box;}'
-      + '.cg-overlay .h3{margin:0 0 4px;font-size:15px;}'
-      + '.cg-overlay .sub{font-size:11.5px;opacity:.85;margin:0 0 8px;line-height:1.35;}'
-      + '.cg-tiles{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;}'
-      + '.cg-tile{width:44%;padding:6px 4px;border-radius:10px;border:none;cursor:pointer;background:#62CBC9;color:#081F2C;font-weight:800;font-size:11px;display:flex;flex-direction:column;align-items:center;gap:4px;transition:transform .1s ease, opacity .3s ease;}'
+      + '.cg-overlay{position:absolute;left:1.5%;top:3%;width:47%;background:rgba(8,31,44,.88);border:2px solid rgba(98,203,201,.5);border-radius:12px;padding:14px 16px;color:#fff;box-sizing:border-box;}'
+      + '.cg-overlay .h3{margin:0 0 6px;font-size:19px;}'
+      + '.cg-overlay .sub{font-size:14px;opacity:.9;margin:0 0 10px;line-height:1.4;}'
+      + '.cg-tiles{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;}'
+      + '.cg-tile{width:46%;padding:10px 6px;border-radius:12px;border:none;cursor:pointer;background:#62CBC9;color:#081F2C;font-weight:800;font-size:14px;display:flex;flex-direction:column;align-items:center;gap:6px;transition:transform .1s ease, opacity .3s ease;}'
       + '.cg-tile:active{transform:scale(.94);}'
       + '.cg-tile.cg-wrong{animation:cg-shake .3s;}'
       + '.cg-tile.cg-tapdone{opacity:.3;pointer-events:none;background:#3a4c52;color:#bcd;}'
       + '@keyframes cg-shake{25%{transform:translateX(-4px);}75%{transform:translateX(4px);}}'
-      + '.cg-tile .cg-ic{font-size:22px;line-height:1;}'
-      + '.cg-tile img{width:100%;max-height:44px;object-fit:contain;border-radius:6px;background:#fff;}'
-      + '.cg-fb{min-height:16px;font-weight:700;font-size:12px;margin-top:6px;}'
-      + '.cg-hud{display:flex;justify-content:space-between;font-size:11px;opacity:.85;margin-top:8px;font-weight:700;}'
+      + '.cg-tile .cg-ic{font-size:30px;line-height:1;}'
+      + '.cg-tile img{width:100%;max-height:70px;object-fit:contain;border-radius:6px;background:#fff;}'
+      + '.cg-fb{min-height:20px;font-weight:700;font-size:14.5px;margin-top:10px;}'
+      + '.cg-hud{display:flex;justify-content:space-between;font-size:13.5px;opacity:.9;margin-top:10px;font-weight:700;}'
       + '.cg-chrysalis{width:20px;height:32px;border-radius:50% 50% 45% 45%/60% 60% 40% 40%;background:#6b8f3a;}'
-      + '@media (max-width:640px){.cg-overlay{width:44%;padding:8px;}.cg-overlay .h3{font-size:12.5px;}.cg-overlay .sub{font-size:9.5px;}.cg-tile{font-size:9px;}.cg-tile img{max-height:32px;}}'
+      + '@media (max-width:640px){.cg-overlay{width:56%;padding:10px 12px;}.cg-overlay .h3{font-size:15px;}.cg-overlay .sub{font-size:12px;}.cg-tile{font-size:11px;padding:8px 4px;}.cg-tile .cg-ic{font-size:24px;}.cg-tile img{max-height:52px;}.cg-fb{font-size:12px;}.cg-hud{font-size:11px;}}'
       ;
     var tag = document.createElement('style');
     tag.id = STYLE_ID;
